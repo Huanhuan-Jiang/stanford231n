@@ -34,8 +34,48 @@ def softmax_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N=X.shape[0]
+    D=X.shape[1]
+    C=W.shape[1]
+    f = np.zeros((C, N))    #f[c][n] is the score for class c for the n-th sample
+    yy = np.zeros((C,N))    #yy_=[c][n] is the probability for class c for the n-th sample
+    sum_yy = np.zeros(N)    #sum[n] is the sum of all y[c][n] over all classes
+    R = 0.0
 
+    for n in range(N):
+       for c in range(C):
+          for d in range(D):
+             f[c][n] += W[d][c]*X[n][d]
+    
+    for n in range(N):
+       for c in range(C):
+          sum_yy[n] += np.exp(f[c][n])
+       for c in range(C):
+          yy[c][n] = np.exp(f[c][n])/sum_yy[n]
+
+    for d in range(D):
+       for c in range(C):
+          R += W[d][c]**2
+    R *= reg
+
+    # Compute the loss
+    for n in range(N):
+       k = y[n]
+       loss += -np.log(yy[k][n])   # the loss of the n-th sample
+          
+    loss /= N
+    loss += R
+
+    # Compute the gradient
+    for d in range(D):
+       for c in range(C):
+          for n in range(N):
+             dW[d][c] += yy[c][n]*X[n][d]
+             if(c == y[n]):
+                dW[d][c] -= X[n][d]
+          dW[d][c] /= N 
+          dW[d][c] += 2*reg*W[d][c]
+                
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     return loss, dW
@@ -59,7 +99,36 @@ def softmax_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N=X.shape[0]
+    D=X.shape[1]
+    C=W.shape[1]
+    loss_array = np.zeros((N, C))
+    f = np.zeros((N, C))    #f[n][c] is the score for class c for the n-th sample
+    yy = np.zeros((N,C))    #yy_=[n][c] is the probability for class c for the n-th sample
+    sum_yy = np.zeros(N)    #sum[n] is the sum of all y[n][c] over all classes
+    R = 0.0
+
+    f = X @ W
+    
+    exp_f = np.exp(f)
+    sum_yy = np.sum(np.exp(f), axis=1)
+    sum_yy = sum_yy[:, np.newaxis]
+
+    yy = exp_f/sum_yy
+    row_indices = np.arange(N)
+    col_indices = y
+
+    # Compute the loss
+    loss_array = -np.log(yy[row_indices, col_indices])
+    loss = np.sum(np.sum(loss_array,axis=0),axis=0)/N
+    loss += reg*np.sum(W**2)
+
+    # Compute the gradient
+    first = yy.T @ X    # first data shape: 10 * 3073
+    one_hot_encoded_y = np.eye(C)[y]   # one_hot_encoded_y data shape: 500 * 10
+    second = one_hot_encoded_y.T @ X   # second data shape: 10 * 3073
+    third = 2*reg*W     # thrid data shape: 3073 * 10
+    dW = (first.T-second.T)/N + third
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
