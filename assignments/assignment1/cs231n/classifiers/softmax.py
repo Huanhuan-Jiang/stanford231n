@@ -34,28 +34,35 @@ def softmax_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    for i in range(X.shape[0]):
-      #X[i]:1*D
-      k=y[i]
-      f_k = 0.0
-      for l in range(X.shape[1]):
-        f_k += X[i][l]*W[l][k]
-        loss += -f_k
-        sum_f = 0.0
-        for j in range(W.shape[1]):
-          f_j=0.0
-          for l in range(X.shape[1]):
-             f_j+=X[i][l]*W[l][j]
-          sum_f += f_j
-        loss += np.log(sum_f)
-        loss /=X.shape[0]
-      
-      for i in range(W.shape[0]):
-         for j in range(W.shape[1]):
-            loss += reg*W[i][j]**2
-      
+    N=X.shape[0]
+    D=X.shape[1]
+    C=W.shape[1]
+    f = np.zeros((C, N))    #f[c][n] is the score for class c for the n-th sample
+    yy = np.zeros((C,N))    #yy_=[c][n] is the probability for class c for the n-th sample
+    sum_yy = np.zeros(N)    #sum[n] is the sum of all y[c][n] over all classes
+    R = 0.0
 
-            
+    for n in range(N):
+       for c in range(C):
+          for d in range(D):
+             f[c][n] += W[d][c]*X[n][d]
+    
+    for n in range(N):
+       for c in range(C):
+          sum_yy[n] += np.exp(f[c][n])
+       for c in range(C):
+          yy[c][n] = np.exp(f[c][n])/sum_yy[n]
+
+    for d in range(D):
+       for c in range(C):
+          R += W[d][c]**2
+    R *= reg
+    
+    for n in range(N):
+       k = y[n]
+       loss += -np.log(yy[k][n])   # the loss of the n-th sample
+    loss /= N
+    loss += R
         
 
 
