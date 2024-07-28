@@ -124,19 +124,11 @@ def softmax_loss_vectorized(W, X, y, reg):
     loss += reg*np.sum(W**2)
 
     # Compute the gradient
-    first = yy.T @ X
-    
-    row_indices = np.arange(N)
-    col_indices = y
-    ones_array = np.ones((N, C))
-    delta_array = ones_array[row_indices, col_indices]
-    second = delta_array.T @ X
-    third = 2*reg*W
-    print('first data shape: ', first.shape)
-    print('second data shape: ', second.shape)
-    print('third data shape: ', third.shape)
-    dW = (first-second)/N + third
-    
+    first = yy.T @ X    # first data shape: 10 * 3073
+    one_hot_encoded_y = np.eye(C)[y]   # one_hot_encoded_y data shape: 500 * 10
+    second = one_hot_encoded_y.T @ X   # second data shape: 10 * 3073
+    third = 2*reg*W     # thrid data shape: 3073 * 10
+    dW = (first.T-second.T)/N + third
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
