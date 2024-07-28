@@ -22,25 +22,27 @@ def svm_loss_naive(W, X, y, reg):
     - loss as single float
     - gradient with respect to weights W; an array of same shape as W
     """
+    C = W.shape[1]
+    N = X.shape[0]
     dW = np.zeros(W.shape)  # initialize the gradient as zero
+    beta = np.zeros((N, C))
 
     # compute the loss and the gradient
-    num_classes = W.shape[1]
-    num_train = X.shape[0]
     loss = 0.0
-    for i in range(num_train):
+    for i in range(N):
         scores = X[i].dot(W)
         correct_class_score = scores[y[i]]
-        for j in range(num_classes):
+        for j in range(C):
             if j == y[i]:
                 continue
             margin = scores[j] - correct_class_score + 1  # note delta = 1
-            if margin > 0:
+            if (margin > 0):
+                beta[i][j] =1.0
                 loss += margin
-
+    
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
-    loss /= num_train
+    loss /= N
 
     # Add regularization to the loss.
     loss += reg * np.sum(W * W)
@@ -54,8 +56,11 @@ def svm_loss_naive(W, X, y, reg):
     # code above to compute the gradient.                                       #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    first = beta.T @ X # first shape: (10, 3073)
+    sum_beta = np.sum(beta, axis=1) - beta[np.arange(N), y]
+    second = np.sum(sum_beta[:, np.newaxis] * X, axis = 0) # second shape: (3073,)
+    third = 2*reg*W # third shape: (10, 3073)
+    dW = (first - second[np.newaxis, :]).T/N + third
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
