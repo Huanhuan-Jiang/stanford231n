@@ -30,16 +30,18 @@ def svm_loss_naive(W, X, y, reg):
 
     # compute the loss and the gradient
     loss = 0.0
-    for i in range(N):
-        scores = X[i].dot(W)
-        correct_class_score = scores[y[i]]
-        for j in range(C):
-            if j == y[i]:
+    for n in range(N):
+        scores = X[n].dot(W)
+        correct_class_score = scores[y[n]]
+        for c in range(C):
+            if c == y[n]:
                 continue
-            margin = scores[j] - correct_class_score + 1  # note delta = 1
+            margin = scores[c] - correct_class_score + 1  # note delta = 1
             if (margin > 0):
-                beta[i][j] =1.0
+                #beta[n][c] =1.0
                 loss += margin
+                dW[:, c] += X[n]
+                dW[:, y[n]] -= X[n]
     
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
@@ -57,16 +59,8 @@ def svm_loss_naive(W, X, y, reg):
     # code above to compute the gradient.                                       #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    third = 0.0
-    for d in range(D):
-        for c in range(C):
-            first = 0.0
-            for n in range(N):
-                beta_dummy = beta[n,c] 
-                for j in range(C):
-                    beta[n,c] -= beta[n,j]
-                first = beta_dummy * X[n,d]
-            dW[d,c] = first/N + 2*reg*W[d,c]
+    dW /= N 
+    dW += 2*reg*W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -83,23 +77,9 @@ def svm_loss_vectorized(W, X, y, reg):
     N = X.shape[0]
     loss = 0.0 
     dW = np.zeros(W.shape)  # initialize the gradient as zero
+    delta = 1.0
     beta = np.zeros((N, C))
-    margin = np.zeros((N, C))
-    one_hot_encoded_y = np.eye(C)[y]   # one_hot_encoded_y data shape: 500 * 10
-    first_term = np.ones((N,C)) - one_hot_encoded_y
-    third_term = X @ W
-    fourth_term = third_term[np.arange(N), y]
-    delta_ones = np.zeros((N, C))
-    margin = third_term - fourth_term[:, np.newaxis] + delta_ones
-    beta = (margin > 0).astype(int)
-
-    # compute the loss and the gradient
-
-    
-    # Right now the loss is a sum over all training examples, but we want it
-    # to be an average instead so we divide by num_train.
-    # Add regularization to the loss.
-    loss += np.sum(first_term * beta * margin)/N + reg*np.sum(W**2)
+    margins = np.zeros((N, C))
 
     #############################################################################
     # TODO:                                                                     #
@@ -108,10 +88,13 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    scores = X @ W
+    scores_true = scores[np.arange(N), y]
+    margins = np.maximum(0, scores - scores_true[:, np.newaxis] + delta)
+    margins[np.arange(N),y] = 0.0
 
-    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+    loss = np.sum(margins)/N + reg*np.sum(W**2)
+    
     #############################################################################
     # TODO:                                                                     #
     # Implement a vectorized version of the gradient for the structured SVM     #
@@ -122,18 +105,9 @@ def svm_loss_vectorized(W, X, y, reg):
     # loss.                                                                     #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    first = X.T @ beta  # first shape: (D, C)
-    print("first shape: ", first.shape)
-    sum_beta = np.sum(beta, axis=1) # shape: (N, 1)
-    print("sum_beta shape: ", sum_beta.shape)
-    second = np.sum(sum_beta[:, np.newaxis] * X, axis = 0) # second shape: (D,)
-    print("second shape: ", second.shape)
-    second_extended = first - second[:, np.newaxis]
-    print("second extended shape: ", second_extended.shape)
-    third = 2*reg*W # third shape: (D, C)
-    print("third shape: ", third.shape)
-    dW = (first - second[:, np.newaxis])/N + third
+    beta = (margins > 0).astype(float)
+    beta[np.arange(N), y] -= np.sum(beta, axis=1) 
+    dW = X.T @ beta/N + 2*reg*W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
