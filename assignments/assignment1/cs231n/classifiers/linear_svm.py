@@ -23,6 +23,7 @@ def svm_loss_naive(W, X, y, reg):
     - gradient with respect to weights W; an array of same shape as W
     """
     C = W.shape[1]
+    D = W.shape[0]
     N = X.shape[0]
     dW = np.zeros(W.shape)  # initialize the gradient as zero
     beta = np.zeros((N, C))
@@ -56,11 +57,16 @@ def svm_loss_naive(W, X, y, reg):
     # code above to compute the gradient.                                       #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    first = beta.T @ X # first shape: (10, 3073)
-    sum_beta = np.sum(beta, axis=1) - beta[np.arange(N), y]
-    second = np.sum(sum_beta[:, np.newaxis] * X, axis = 0) # second shape: (3073,)
-    third = 2*reg*W # third shape: (10, 3073)
-    dW = (first - second[np.newaxis, :]).T/N + third
+    third = 0.0
+    for d in range(D):
+        for c in range(C):
+            first = 0.0
+            for n in range(N):
+                beta_dummy = beta[n,c] 
+                for j in range(C):
+                    beta[n,c] -= beta[n,j]
+                first = beta_dummy * X[n,d]
+            dW[d,c] = first/N + 2*reg*W[d,c]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -73,8 +79,27 @@ def svm_loss_vectorized(W, X, y, reg):
 
     Inputs and outputs are the same as svm_loss_naive.
     """
-    loss = 0.0
+    C = W.shape[1]
+    N = X.shape[0]
+    loss = 0.0 
     dW = np.zeros(W.shape)  # initialize the gradient as zero
+    beta = np.zeros((N, C))
+    margin = np.zeros((N, C))
+    one_hot_encoded_y = np.eye(C)[y]   # one_hot_encoded_y data shape: 500 * 10
+    first_term = np.ones((N,C)) - one_hot_encoded_y
+    third_term = X @ W
+    fourth_term = third_term[np.arange(N), y]
+    delta_ones = np.zeros((N, C))
+    margin = third_term - fourth_term[:, np.newaxis] + delta_ones
+    beta = (margin > 0).astype(int)
+
+    # compute the loss and the gradient
+
+    
+    # Right now the loss is a sum over all training examples, but we want it
+    # to be an average instead so we divide by num_train.
+    # Add regularization to the loss.
+    loss += np.sum(first_term * beta * margin)/N + reg*np.sum(W**2)
 
     #############################################################################
     # TODO:                                                                     #
@@ -98,7 +123,17 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    first = X.T @ beta  # first shape: (D, C)
+    print("first shape: ", first.shape)
+    sum_beta = np.sum(beta, axis=1) # shape: (N, 1)
+    print("sum_beta shape: ", sum_beta.shape)
+    second = np.sum(sum_beta[:, np.newaxis] * X, axis = 0) # second shape: (D,)
+    print("second shape: ", second.shape)
+    second_extended = first - second[:, np.newaxis]
+    print("second extended shape: ", second_extended.shape)
+    third = 2*reg*W # third shape: (D, C)
+    print("third shape: ", third.shape)
+    dW = (first - second[:, np.newaxis])/N + third
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
