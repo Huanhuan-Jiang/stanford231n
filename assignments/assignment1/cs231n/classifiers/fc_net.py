@@ -54,8 +54,11 @@ class TwoLayerNet(object):
         # weights and biases using the keys 'W2' and 'b2'.                         #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-        pass
+        
+        self.params['W1'] = np.random.normal(scale=weight_scale, size=(input_dim, hidden_dim))
+        self.params['W2'] = np.random.normal(scale=weight_scale, size=(hidden_dim, num_classes))
+        self.params['b1'] = np.zeros((hidden_dim, ))
+        self.params['b2'] = np.zeros((num_classes, ))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -88,8 +91,10 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
-
+        out1, cache1 = affine_forward(X, self.params['W1'], self.params['b1'])
+        out2, cache2 = relu_forward(out1)
+        scores, cache3 = affine_forward(out2, self.params['W2'], self.params['b2'])
+        
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -112,7 +117,18 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dout = softmax_loss(scores, y)
+        loss += 0.5*self.reg*(np.sum(cache1[1]**2) + np.sum(cache3[1]**2))
+        dx_3, dW2, db2 = affine_backward(dout, cache3)
+        dW2 += self.reg*(cache3[1])
+        dx_2 = relu_backward(dx_3, cache2)
+        dx, dW1, db1 = affine_backward(dx_2, cache1)
+        dW1 += self.reg*(cache1[1])
+        
+        grads['W1'] = dW1
+        grads['W2'] = dW2
+        grads['b1'] = db1
+        grads['b2'] = db2
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
