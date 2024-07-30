@@ -1,0 +1,12 @@
+.venv/
+venv/
+myvenv/
+path/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+imagenet_val_25.npz
+cifar-10-batches-py/
+get-pip.py
